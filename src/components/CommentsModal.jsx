@@ -6,37 +6,56 @@ import Modal from "react-modal";
 import { HiX } from "react-icons/hi";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { doc, getFirestore, onSnapshot } from "firebase/firestore";
-import {app} from '../firebase'
+import {
+  addDoc,
+  doc,
+  getFirestore,
+  onSnapshot,
+  serverTimestamp,
+  collection,
+} from "firebase/firestore";
+import { app } from "../firebase";
+import { useRouter } from "next/navigation";
 export default function CommentsModal() {
   const [open, setOpen] = useRecoilState(modalState);
   const [postId, setPostId] = useRecoilState(postIdState);
-  const [input, setInput] = useState('')
-  const [post, setPost] = useState({})
-  const {data: session} = useSession();
+  const [input, setInput] = useState("");
+  const [post, setPost] = useState({});
+  const { data: session } = useSession();
   const db = getFirestore(app);
+  const router = useRouter();
 
   useEffect(() => {
-    if(postId !== '') {
-      const postRef = doc(db, 'posts', postId);
-      const unsubscribe = onSnapshot(
-        postRef,
-        (snapshot) => {
-          if(snapshot.exists()) {
-            setPost(snapshot.data());
-          } else {
-            console.log('No such document.')
-          }
+    if (postId !== "") {
+      const postRef = doc(db, "posts", postId);
+      const unsubscribe = onSnapshot(postRef, (snapshot) => {
+        if (snapshot.exists()) {
+          setPost(snapshot.data());
+        } else {
+          console.log("No such document.");
         }
-      )
+      });
       return () => unsubscribe();
     }
-
-  }, [postId])
+  }, [postId]);
 
   const sendComment = async () => {
-    
-  }
+    addDoc(collection(db, "posts", postId, "comments"), {
+      name: session.user.name,
+      username: session.user.username,
+      userImg: session.user.image,
+      comment: input,
+      timeStamp: serverTimestamp(),
+    })
+      .then(() => {
+        setInput("");
+        setOpen(false);
+        router.push(`/posts/${postId}`);
+      })
+      .catch((error) => {
+        console.log("Erorr adding document: ", error);
+      });
+  };
   return (
     <div>
       {open && (
@@ -56,41 +75,58 @@ export default function CommentsModal() {
               />
             </div>
             <div className="p-2 flex items-center space-x-1 relative">
-              <span className="w-0.5 h-full z-[-1] absolute left-8 top-11
-               bg-gray-300" />
-              <img src={post?.profileImg} alt="user-img"
-              className="h-11 w-11 rounded-full mr-4"/>
-              <h4 className="font-bold sm:text-[16px] text-[15px]
-              hover:underline truncate">
-                {post?.name}</h4>
-              <span className="text-sm sm:text-[15px] truncate">@{post?.username}</span>
-
+              <span
+                className="w-0.5 h-full z-[-1] absolute left-8 top-11
+               bg-gray-300"
+              />
+              <img
+                src={post?.profileImg}
+                alt="user-img"
+                className="h-11 w-11 rounded-full mr-4"
+              />
+              <h4
+                className="font-bold sm:text-[16px] text-[15px]
+              hover:underline truncate"
+              >
+                {post?.name}
+              </h4>
+              <span className="text-sm sm:text-[15px] truncate">
+                @{post?.username}
+              </span>
             </div>
-            <p className="text-gray-500 text-[15px] sm:text-[16px]
-            ml-16 mb-2">{post?.text}</p>
+            <p
+              className="text-gray-500 text-[15px] sm:text-[16px]
+            ml-16 mb-2"
+            >
+              {post?.text}
+            </p>
             <div className="flex p-3 space-x-3">
-              <img 
+              <img
                 src={session.user.image}
                 alt="user-img"
                 className="h-11 w-11 rounded-full cursor-pointer
-                hover:brightness-95" />
-                <div className="w-full divide-y divide-gray-200">
-              <div>
-                <textarea className="w-full border-none outline-none tracking-wide
+                hover:brightness-95"
+              />
+              <div className="w-full divide-y divide-gray-200">
+                <div>
+                  <textarea
+                    className="w-full border-none outline-none tracking-wide
                 min-h-[50px] text-gray-700 placeholder:text-gray-500"
-                placeholder="What's Happening?"
-                rows='2'
-                onChange={(e) => setInput(e.target.value)}>
-                </textarea>
-              </div>
-              <div className="flex items-center justify-end pt-2.5">
-                <button className="bg-blue-400 text-white px-4 py-1.5
+                    placeholder="What's Happening?"
+                    rows="2"
+                    onChange={(e) => setInput(e.target.value)}
+                  ></textarea>
+                </div>
+                <div className="flex items-center justify-end pt-2.5">
+                  <button
+                    className="bg-blue-400 text-white px-4 py-1.5
                 rounded-full font-bold shadow-md hover:brightness-95"
-                disabled={input.trim() === ''}
-                onClick={sendComment}>
-                  Reply
-                </button>
-              </div>
+                    disabled={input.trim() === ""}
+                    onClick={sendComment}
+                  >
+                    Reply
+                  </button>
+                </div>
               </div>
             </div>
           </div>

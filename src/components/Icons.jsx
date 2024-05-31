@@ -1,18 +1,19 @@
 "use client"
 
-import { signIn, useSession } from 'next-auth/react'
+import { signIn, signOut, useSession } from 'next-auth/react'
 import {HiOutlineChat, HiOutlineHeart, HiOutlineTrash, HiHeart} from 'react-icons/hi'
 import {app} from '../firebase'
 import { getFirestore, serverTimestamp, setDoc, doc, onSnapshot, collection, deleteDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { useRecoilState } from 'recoil';
-import { modalState } from '../atom/modalAtom';
+import { modalState, postIdState } from '../atom/modalAtom';
 export default function Icons({id, uid}) {
   const {data: session} = useSession();
   const db = getFirestore(app);
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState([]);
   const [open, setOpen] = useRecoilState(modalState);
+  const [postId, setPostId] = useRecoilState(postIdState)
 
   const likePost = async () => {
     if(session){
@@ -60,7 +61,14 @@ export default function Icons({id, uid}) {
     <div className='flex justify-start gap-5 p-2 text-gray-500'>
       <HiOutlineChat className='h-8 w-8 cursor-pointer rounded-full transition 
       duration-500 ease-in-out p-2 hover:text-sky-500 hover:bg-sky-100' 
-      onClick={() => setOpen(!open)}/>
+      onClick={() => {
+        if(!session) {
+          signOut();
+        } else {
+          setOpen(!open)
+          setPostId(id)
+        }
+      }}/>
       <div className='flex items-center'>
       {
         isLiked ? 

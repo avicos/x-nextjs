@@ -49,7 +49,7 @@ export default function Icons({ id, uid }) {
     onSnapshot(collection(db, 'posts', id, 'likes'), (snapshot) => {
       setLikes(snapshot.docs);
     });
-  }, [db]);
+  }, [db, id]);
 
   useEffect(() => {
     setIsLiked(

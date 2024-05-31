@@ -1,40 +1,41 @@
-"use client";
+'use client';
 
-import { signIn, signOut, useSession } from "next-auth/react";
 import {
   HiOutlineChat,
   HiOutlineHeart,
   HiOutlineTrash,
   HiHeart,
-} from "react-icons/hi";
-import { app } from "../firebase";
+} from 'react-icons/hi';
+
+import { signIn, useSession } from 'next-auth/react';
 import {
-  getFirestore,
-  serverTimestamp,
-  setDoc,
-  doc,
-  onSnapshot,
   collection,
   deleteDoc,
-} from "firebase/firestore";
-import { useEffect, useState } from "react";
-import { useRecoilState } from "recoil";
-import { modalState, postIdState } from "../atom/modalAtom";
+  doc,
+  getFirestore,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+} from 'firebase/firestore';
+import { app } from '../firebase';
+import { useEffect, useState } from 'react';
+import { modalState, postIdState } from '../atom/modalAtom';
+import { useRecoilState } from 'recoil';
+
 export default function Icons({ id, uid }) {
   const { data: session } = useSession();
-  const db = getFirestore(app);
   const [isLiked, setIsLiked] = useState(false);
-  const [likes, setLikes] = useState([]);
+  const [likes, setLikes] = useState([]); // [1
   const [open, setOpen] = useRecoilState(modalState);
-  const [postId, setPostId] = useRecoilState(postIdState);
-  const [comments, setComments] = useState([]);
-
+  const [postId, setPostId] = useRecoilState(postIdState); // [2
+  const [comments, setComments] = useState([]); // [3
+  const db = getFirestore(app);
   const likePost = async () => {
     if (session) {
       if (isLiked) {
-        await deleteDoc(doc(db, "posts", id, "likes", session?.user.uid));
+        await deleteDoc(doc(db, 'posts', id, 'likes', session?.user.uid));
       } else {
-        await setDoc(doc(db, "posts", id, "likes", session.user.uid), {
+        await setDoc(doc(db, 'posts', id, 'likes', session.user.uid), {
           username: session.user.username,
           timestamp: serverTimestamp(),
         });
@@ -43,8 +44,9 @@ export default function Icons({ id, uid }) {
       signIn();
     }
   };
+
   useEffect(() => {
-    onSnapshot(collection(db, "posts", id, "likes"), (snapshot) => {
+    onSnapshot(collection(db, 'posts', id, 'likes'), (snapshot) => {
       setLikes(snapshot.docs);
     });
   }, [db]);
@@ -57,25 +59,25 @@ export default function Icons({ id, uid }) {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
-      collection(db, "posts", id, "comments"),
+      collection(db, 'posts', id, 'comments'),
       (snapshot) => setComments(snapshot.docs)
     );
     return () => unsubscribe();
   }, [db, id]);
 
   const deletePost = async () => {
-    if (window.confirm("Are you sure you want to delete this post?")) {
+    if (window.confirm('Are you sure you want to delete this post?')) {
       if (session?.user?.uid === uid) {
-        deleteDoc(doc(db, "posts", id))
+        deleteDoc(doc(db, 'posts', id))
           .then(() => {
-            console.log("Document successfully deleted");
+            console.log('Document successfully deleted!');
             window.location.reload();
           })
           .catch((error) => {
-            console.log("Error removing document: ", error);
+            console.error('Error removing document: ', error);
           });
       } else {
-        alert("You are not authorised to delete this post");
+        alert('You are not authorized to delete this post');
       }
     }
   };
